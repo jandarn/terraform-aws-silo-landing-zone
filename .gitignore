@@ -1,1 +1,3 @@
 .directory
+*/terraform.tfstate
+README-dev.md
