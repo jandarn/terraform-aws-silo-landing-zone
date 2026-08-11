@@ -12,10 +12,10 @@ provider "aws" {
   region = var.aws_region
 }
 
-terraform {
-  backend "s3" {
-    bucket = "tf-state-o-lnperltmr5-t0cj7u"
-    key    = "bootstrap/terraform.tfstate"
-    region = "us-east-1"
-  }
-}
+#terraform {
+#  backend "s3" {
+#    bucket = "tf-state-example"
+#    key    = "bootstrap/terraform.tfstate"
+#    region = "us-east-1"
+#  }
+#}
