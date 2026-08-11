@@ -11,7 +11,7 @@ resource "aws_organizations_policy" "deny_log_deletion" {
         "cloudtrail:DeleteTrail",
         "s3:DeleteObject"
       ],
-      "Resource": "*"
+      "Resource": "${aws_s3_bucket.cloudtrail_logs_bucket.arn}/*"
     }
   ]
 }
@@ -19,7 +19,7 @@ POLICY
   type        = "SERVICE_CONTROL_POLICY"
 }
 
-resource "aws_organizations_policy" "deny_non_eu_regions" {
+resource "aws_organizations_policy" "deny_non_us_regions" {
   name        = "DenyNonUSRegions"
   description = "Deny creation of resources in non-US regions"
   content     = <<POLICY
@@ -97,7 +97,7 @@ locals {
 
   scp_policies = {
     deny_log_deletion       = aws_organizations_policy.deny_log_deletion.id
-    deny_non_eu_regions     = aws_organizations_policy.deny_non_eu_regions.id
+    deny_non_us_regions     = aws_organizations_policy.deny_non_us_regions.id
     deny_leave_organization = aws_organizations_policy.deny_leave_organization.id
     deny_disable_audit      = aws_organizations_policy.deny_disable_audit.id
   }
