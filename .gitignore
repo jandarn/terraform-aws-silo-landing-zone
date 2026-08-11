@@ -1,5 +1,7 @@
 .directory
 README-dev.md
 */.terraform
-*/terraform.tfstate
+*.tfstate*
+*.plan
+*.tfvars
 docs/deployment-img
