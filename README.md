@@ -17,7 +17,7 @@ The organization is split in two OUs: The Core OU which holds platform accounts,
 
 1. Terraform uses the Management Account only to deploy and configure the platform, which limits the usage of high privilege actions.
 2. Organization-wide CloudTrail captures API activity across every account. Logs are delivered to a bucket in the isolated log-archive account, where versioning and a deny-delete policy make the audit trail tamper-evident, an account compromise cannot erase its own tracks.
-3. Terraform state lives in a dedicated operations account, separate from the management account that governs the organization. This limits blast radius and lets state access be granted independently of organization-level permissions, an operator who deploys tenants does not need rights over the organization root.
+3. Terraform state lives in a dedicated operations account, separate from the management account that governs the organization. This limits blast radius and lets state access be granted independently of organization-level permissions, an operator who deploys tenants does not need rights over the organization root. NEED CHANGE
 4. GuardDuty is enabled across all accounts, with findings aggregated in the security account as delegated administrator. Centralising detection outside the accounts being monitored means a compromised tenant cannot suppress its own alerts.
 5. Each client receives a dedicated AWS account rather than shared infrastructure. The account boundary is the strongest isolation primitive AWS offers — one client's workload cannot reach another's, and billing, access and audit trails are separated by construction. Pooled multi-tenancy is cheaper to operate, but cannot provide the per-client separation regulated financial workloads require.
 
@@ -82,7 +82,7 @@ VCS, Pipeline, Event-driven
 ## Deployment (PENDING)
 Prerequisites: AWS account, Terraform >= 1., credentials with organization-level permissions
 
-1. bootstrap  — organization, Core OU, ops account, state backend
+1. bootstrap  — organization, Core OU, state backend
 2. platform   — core accounts, org-wide CloudTrail, GuardDuty, SCPs
 3. tenants    — account factory
 
