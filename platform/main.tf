@@ -132,7 +132,7 @@ resource "aws_s3_bucket_public_access_block" "cloudtrail_logs_bucket_public_acce
 resource "aws_s3_bucket_policy" "cloudtrail_logs" {
   provider = aws.log_archive
   bucket   = aws_s3_bucket.cloudtrail_logs_bucket.id
-  policy   = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -148,7 +148,7 @@ resource "aws_s3_bucket_policy" "cloudtrail_logs" {
         Principal = "*"
         Action    = "s3:DeleteObjectVersion"
         Resource  = "${aws_s3_bucket.cloudtrail_logs_bucket.arn}/*"
-      },     {
+        }, {
         Sid       = "AWSCloudTrailAclCheck"
         Effect    = "Allow"
         Principal = { Service = "cloudtrail.amazonaws.com" }
