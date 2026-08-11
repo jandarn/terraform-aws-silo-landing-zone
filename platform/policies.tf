@@ -9,11 +9,17 @@ resource "aws_organizations_policy" "deny_log_deletion" {
       "Effect": "Deny",
       "Action": [
         "s3:DeleteObject",
-        "s3:DeleteObjectVersion",
+        "s3:DeleteObjectVersion"
+      ],
+      "Resource": "${aws_s3_bucket.cloudtrail_logs_bucket.arn}/*"
+    },
+    {
+      "Effect": "Deny",
+      "Action": [
         "s3:PutBucketPolicy",
         "s3:PutBucketVersioning"
       ],
-      "Resource": "${aws_s3_bucket.cloudtrail_logs_bucket.arn}/*"
+      "Resource": "${aws_s3_bucket.cloudtrail_logs_bucket.arn}"
     }
   ]
 }
