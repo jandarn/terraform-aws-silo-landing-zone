@@ -76,6 +76,7 @@ resource "aws_guardduty_organization_configuration" "org" {
   provider                         = aws.security
   detector_id                      = aws_guardduty_detector.security.id
   auto_enable_organization_members = "ALL"
+  depends_on                       = [aws_guardduty_detector.security, aws_guardduty_organization_admin_account.security_account]
 }
 
 
@@ -127,8 +128,8 @@ resource "aws_s3_bucket_public_access_block" "cloudtrail_logs_bucket_public_acce
 }
 
 # ------ cloudtrail s3 policies ------
-# deny-delete policy on bucket
-resource "aws_s3_bucket_policy" "cloudtrail_logs_deny_delete" {
+# cloudtrail s3 bucket policy to allow cloudtrail to write logs to the bucket
+resource "aws_s3_bucket_policy" "cloudtrail_logs" {
   provider = aws.log_archive
   bucket   = aws_s3_bucket.cloudtrail_logs_bucket.id
   policy   = jsonencode({
@@ -140,18 +141,7 @@ resource "aws_s3_bucket_policy" "cloudtrail_logs_deny_delete" {
         Principal = "*"
         Action    = "s3:DeleteObject"
         Resource  = "${aws_s3_bucket.cloudtrail_logs_bucket.arn}/*"
-      }
-    ]
-  })
-}
-
-# cloudtrail s3 bucket policy to allow cloudtrail to write logs to the bucket
-resource "aws_s3_bucket_policy" "cloudtrail_logs" {
-  provider = aws.log_archive
-  bucket   = aws_s3_bucket.cloudtrail_logs_bucket.id
-  policy   = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
+      },
       {
         Sid       = "AWSCloudTrailAclCheck"
         Effect    = "Allow"
