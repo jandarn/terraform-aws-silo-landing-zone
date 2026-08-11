@@ -19,12 +19,6 @@ variable "log_archive_account_mail" {
   type        = string
 }
 
-variable "allow_destroy_log_bucket" {
-  description = "Set to true to allow destroying the CloudTrail logs bucket"
-  type        = bool
-  default     = false
-}
-
 variable "force_destroy_log_bucket" {
   description = "Set to true to delete all objects when destroying the CloudTrail logs bucket"
   type        = bool
