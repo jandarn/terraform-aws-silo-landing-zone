@@ -90,29 +90,82 @@ This is a reference architecture, scoped to the account structure, governance co
 
 ## Path to automation 
 
-1. VCS-driven (HCP Terraform or Atlantis)
+1. **VCS-driven (HCP Terraform or Atlantis)**
 
 The tenant map lives in git; a PR triggers the plan, a merge triggers the apply. Approval is code review.
 
 > Main risk: the two-step apply with -target doesn't fit a single automated execution. Either split the factory into vending/baseline layers or accept that the first run fails. Automation forces you to solve the provider problem first.
 
-2. Pipeline CI (GitHub Actions with OIDC)
+2. **Pipeline CI (GitHub Actions with OIDC)**
 
 Same trigger, but you control the runner and credential chain. OIDC avoids long-lived keys.
 
 > Main risk: the pipeline role needs organization-level permissions—create accounts, attach SCPs. A highly privileged identity living in CI: compromising the pipeline compromises the organization. Mitigation: one role per layer, and the tenant pipeline cannot touch platform. This is where your three-state separation starts paying off.
 
-3. Event-driven (portal or API → EventBridge → workflow)
+3. **Event-driven (portal or API → EventBridge → workflow)**
 
 A commercial signup provisions the account without anyone editing HCL.
 
 > Main risk: Terraform stops being the source of truth for the tenant list unless automation writes back to the map. Drift appears between what exists and what's declared. To be clear: this already exists and it's called Control Tower Account Factory / Service Catalog. Naming it gives you credibility; pretending it doesn't exist takes it away.
 
-## Deployment (PENDING)
-Prerequisites: AWS account, Terraform >= 1., credentials with organization-level permissions
+## Deployment
 
-1. bootstrap  — organization, Core OU, state backend
-2. platform   — core accounts, org-wide CloudTrail, GuardDuty, SCPs
-3. tenants    — account factory
+### 1. Bootstrap deployment
 
-Each layer reads the previous one through remote state.
+Creates an AWS Organization and the S3 bucket for remote state storage.
+
+```bash
+cd bootstrap
+terraform apply
+```
+
+### 2. Bootstrap state migration
+
+Add the remote backend configuration to `bootstrap/terraform.tf`:
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket = "your-bucket-id"
+    key    = "bootstrap/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+```
+
+Then run:
+
+```bash
+terraform init -migrate-state
+```
+
+### 3. Configure platform backend
+
+Add the remote backend configuration to `platform/terraform.tf` (same pattern as bootstrap).
+
+### 4. Deploy platform with targeted apply
+
+First, provision the core accounts:
+
+```bash
+cd platform
+terraform apply -target=aws_organizations_account.security
+terraform apply -target=aws_organizations_account.log_archive
+```
+
+### 5. Provision remaining platform infrastructure
+
+Deploy the complete platform:
+
+```bash
+terraform apply
+```
+
+### 6. Provision tenant accounts
+
+Configure the tenant backend in `tenants/terraform.tf`, populate the `tenant_accounts` variable in `terraform.tfvars`, then apply:
+
+```bash
+cd tenants
+terraform apply
+```
