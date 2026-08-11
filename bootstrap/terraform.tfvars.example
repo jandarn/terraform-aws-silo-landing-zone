@@ -1,0 +1,3 @@
+aws_region = "us-east-1"
+allow_destroy_state_bucket = false
+force_destroy_state_bucket = false
