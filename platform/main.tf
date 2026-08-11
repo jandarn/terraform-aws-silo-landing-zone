@@ -143,6 +143,12 @@ resource "aws_s3_bucket_policy" "cloudtrail_logs" {
         Resource  = "${aws_s3_bucket.cloudtrail_logs_bucket.arn}/*"
       },
       {
+        Sid       = "DenyDeleteVersion"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:DeleteObjectVersion"
+        Resource  = "${aws_s3_bucket.cloudtrail_logs_bucket.arn}/*"
+      },     {
         Sid       = "AWSCloudTrailAclCheck"
         Effect    = "Allow"
         Principal = { Service = "cloudtrail.amazonaws.com" }
