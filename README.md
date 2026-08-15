@@ -36,7 +36,7 @@ This architecture uses AWS accounts as hard boundaries and applies organization-
 | **One AWS account per tenant** | AWS account boundaries provide hard isolation; a bug or misconfiguration cannot cross client boundaries without explicit trust relationships. | Higher operational cost. |
 | **Custom Terraform vs. AWS Control Tower** | Keeps all infrastructure in version control with diffable changes and visible reasoning. | Increased maintenance burden and ongoing operational work. |
 | **Three separate Terraform states** | Bootstrap is separate because it creates the backend the other layers consume — a startup dependency, not a preference. Platform and tenants are separate to contain blast radius: an operator error while vending tenants cannot reach the organization. | Three configurations to maintain; cross-layer references via `terraform_remote_state` must remain stable. |
-| **close_on_deletion = false on accounts** | Prevents accidental account closure from configuration edits; account closure is irreversible after 90 days. | Offboarding requires two manual steps when the account is closed later: remove from config, then close the account separately. |
+| **close_on_deletion defaults to false on accounts** | Prevents accidental account closure from configuration edits; account closure is irreversible after 90 days. | The default offboarding pattern is two-step: remove the tenant from configuration, then close the account manually if needed. The toggle exists, but automatic closure is not the default behavior. |
 
 ## Tenant onboarding and offboarding
 
@@ -59,11 +59,11 @@ Run `terraform apply` to provision the account.
 
 ### Offboarding
 
-Offboarding is deliberately split into two steps so that removing a tenant from configuration never closes a client account by itself:
+The tenant account factory exposes a `close_tenant_accounts_on_deletion` toggle, which defaults to `false`. The default operating posture is a two-step offboarding flow: remove the tenant from Terraform management, then close the account manually if needed.
 
-1. Remove the tenant entry from `tenant_accounts` in `terraform.tfvars` and run `terraform apply` to detach the account from Terraform management. If `close_tenant_accounts_on_deletion` is `true`, this step closes the account automatically.
+1. Remove the tenant entry from `tenant_accounts` in `terraform.tfvars` and run `terraform apply` to detach the account from Terraform management.
 
-2. If `close_tenant_accounts_on_deletion` is `false`, manually close the account in the AWS Console. Note: account closure is irreversible after 90 days.
+2. Close the account manually in the AWS Console. Closure is reversible for 90 days; after that it is permanent.
 
 ## What's built
 
@@ -86,13 +86,7 @@ This is a reference architecture, scoped to the account structure, governance co
 - **Dedicated state-management account.** A separate state-management account would reduce blast radius and allow state access to be granted independently of organization-level permissions; this remains a future hardening step.
 - **Security Hub and AWS Config.** GuardDuty covers threat detection; broader posture management and configuration compliance are the next layer.
 - **Tenant workload networking.** Accounts are delivered as a governed empty foundation; what runs inside is the client's concern.
-- **GuardDuty enrollment for core accounts.** With
-  `auto_enable_organization_members = "ALL"`, the management and log-archive
-  accounts did not enroll automatically during testing; only accounts created
-  after the configuration was applied were covered. Log-archive was enrolled
-  manually to verify the delegated administrator setup works. Explicit
-  `aws_guardduty_member` resources for the core accounts are the fix, deferred
-  to v2.
+- **GuardDuty enrollment for core accounts.** With `auto_enable_organization_members = "ALL"`, the management and log-archive accounts did not enroll automatically during testing; only accounts created after the configuration was applied were covered. Log-archive was enrolled manually to verify the delegated administrator setup works. Explicit `aws_guardduty_member` resources for the core accounts are the fix, deferred to v2.
 
 ## Path to automation 
 
@@ -195,7 +189,9 @@ and `bootstrap` holds the remote state the other two read.
    terraform destroy
 ```
 
-Member accounts are not closed by `terraform destroy`; they are removed from
-Terraform's state while remaining in the organization. Closing an AWS account is
-a deliberate, manual action with a 90-day suspension period, and the account
-factory does not automate it.
+Member accounts are not closed automatically by default when `terraform destroy`
+removes them from state; the account factory's
+`close_tenant_accounts_on_deletion` toggle defaults to `false`. If you want to
+close the account, do it manually. Closing an AWS account is a deliberate action
+with a 90-day suspension period, and the default posture is manual closure rather
+than automated closure.
