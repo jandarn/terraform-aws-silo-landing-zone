@@ -1,3 +1,0 @@
-s3_bucket_id = "tf-state-bucket-id"
-security_account_mail = "youremail@example.com"
-log_archive_account_mail = "youremail@example.com"

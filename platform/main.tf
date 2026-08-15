@@ -66,12 +66,17 @@ provider "aws" {
 
 
 # ============= GUARDDUTY CONFIGURATION (LOG-ARCHIVE) ==============
-# Enable guardduty detector in the log-archive account and auto-enable it for all accounts in the organization.
+# Enable guardduty detector in the log-archive and management account and auto-enable it for all accounts in the organization.
 
 resource "aws_guardduty_detector" "security" {
   provider = aws.security
   enable   = true
 }
+
+resource "aws_guardduty_detector" "management" {
+  enable = true
+}
+
 resource "aws_guardduty_organization_configuration" "org" {
   provider                         = aws.security
   detector_id                      = aws_guardduty_detector.security.id
@@ -128,6 +133,8 @@ resource "aws_s3_bucket_public_access_block" "cloudtrail_logs_bucket_public_acce
 }
 
 # ------ cloudtrail s3 policies ------
+data "aws_caller_identity" "management" {}
+
 # cloudtrail s3 bucket policy to allow cloudtrail to write logs to the bucket
 resource "aws_s3_bucket_policy" "cloudtrail_logs" {
   provider = aws.log_archive
@@ -164,6 +171,16 @@ resource "aws_s3_bucket_policy" "cloudtrail_logs" {
         Condition = {
           StringEquals = { "s3:x-amz-acl" = "bucket-owner-full-control" }
         }
+      },
+      {
+        Sid       = "AWSCloudTrailWriteManagement"
+        Effect    = "Allow"
+        Principal = { Service = "cloudtrail.amazonaws.com" }
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.cloudtrail_logs_bucket.arn}/AWSLogs/${data.aws_caller_identity.management.account_id}/*"
+        Condition = {
+          StringEquals = { "s3:x-amz-acl" = "bucket-owner-full-control" }
+        }
       }
     ]
   })
@@ -178,5 +195,5 @@ resource "aws_cloudtrail" "org_trail" {
   enable_log_file_validation    = true
   include_global_service_events = true
 
-  depends_on = [aws_s3_bucket_policy.cloudtrail_logs]
+  depends_on = [aws_guardduty_detector.management, aws_guardduty_detector.security, aws_s3_bucket_policy.cloudtrail_logs]
 }

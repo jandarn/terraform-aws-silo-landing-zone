@@ -9,7 +9,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "tf-state-o-lnperltmr5-t0cj7u"
+    bucket = "my-example-bucket-name"
     key    = "platform/terraform.tfstate"
     region = "us-east-1"
   }

@@ -14,8 +14,8 @@ provider "aws" {
 
 #terraform {
 #  backend "s3" {
-#    bucket = "tf-state-example"
+#    bucket = "your-example-bucket-name"
 #    key    = "bootstrap/terraform.tfstate"
-#    region = "us-east-1"
+#    region = "us-east-2"
 #  }
 #}
