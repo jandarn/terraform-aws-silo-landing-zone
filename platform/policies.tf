@@ -19,6 +19,11 @@ resource "aws_organizations_policy" "deny_log_deletion" {
         "s3:PutBucketPolicy",
         "s3:PutBucketVersioning"
       ],
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::${aws_organizations_account.log_archive_account.id}:role/OrganizationAccountAccessRole"
+        }
+      },
       "Resource": "${aws_s3_bucket.cloudtrail_logs_bucket.arn}"
     }
   ]

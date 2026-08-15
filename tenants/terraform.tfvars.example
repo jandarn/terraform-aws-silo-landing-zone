@@ -1,9 +1,0 @@
-tenant_accounts = {
-    tenant1 = {
-        name  = "tenant1"
-        email = "youremail@example.com"
-    }
-}
-
-aws_region = "us-east-1"
-s3_bucket_id = "tf-state-bucket-example"

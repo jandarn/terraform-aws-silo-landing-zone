@@ -86,6 +86,13 @@ This is a reference architecture, scoped to the account structure, governance co
 - **Dedicated state-management account.** A separate state-management account would reduce blast radius and allow state access to be granted independently of organization-level permissions; this remains a future hardening step.
 - **Security Hub and AWS Config.** GuardDuty covers threat detection; broader posture management and configuration compliance are the next layer.
 - **Tenant workload networking.** Accounts are delivered as a governed empty foundation; what runs inside is the client's concern.
+- **GuardDuty enrollment for core accounts.** With
+  `auto_enable_organization_members = "ALL"`, the management and log-archive
+  accounts did not enroll automatically during testing; only accounts created
+  after the configuration was applied were covered. Log-archive was enrolled
+  manually to verify the delegated administrator setup works. Explicit
+  `aws_guardduty_member` resources for the core accounts are the fix, deferred
+  to v2.
 
 ## Path to automation 
 
@@ -158,3 +165,37 @@ Configure the tenant backend in `tenants/terraform.tf`, populate the `tenant_acc
 cd tenants
 terraform apply
 ```
+## Teardown
+
+Destroy in reverse order of deployment. Each layer depends on the one below it,
+and `bootstrap` holds the remote state the other two read.
+
+1. **Tenants.** `cd tenants && terraform destroy`
+
+2. **Platform.** The CloudTrail log bucket is versioned and is not emptied by a
+   plain destroy. `force_destroy` is read from state rather than from the
+   current configuration, so the flag has to be applied before it takes effect:
+
+```bash
+   cd platform
+   terraform apply -var="force_destroy_log_bucket=true"
+   terraform destroy -var="force_destroy_log_bucket=true"
+```
+
+   Alternatively, empty the bucket manually and run a plain destroy.
+
+3. **Bootstrap.** The state bucket cannot be emptied while it is still serving
+   as the backend. Comment out the `backend "s3"` block, migrate the state to
+   local, then destroy:
+
+```bash
+   cd bootstrap
+   # comment out the backend "s3" block in terraform.tf
+   terraform init -migrate-state
+   terraform destroy
+```
+
+Member accounts are not closed by `terraform destroy`; they are removed from
+Terraform's state while remaining in the organization. Closing an AWS account is
+a deliberate, manual action with a 90-day suspension period, and the account
+factory does not automate it.
